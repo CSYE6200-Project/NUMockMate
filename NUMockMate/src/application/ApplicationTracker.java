@@ -9,9 +9,7 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
@@ -98,8 +96,8 @@ public class ApplicationTracker extends Application {
         positionField.setPromptText("Position");
         TextField statusField = new TextField();
         statusField.setPromptText("Status");
-        TextField deadlineField = new TextField();
-        deadlineField.setPromptText("Deadline (YYYY-MM-DD)");
+        DatePicker deadlinePicker = new DatePicker();
+        deadlinePicker.setPromptText("Pick a deadline");
 
         Button addButton = new Button("Add");
         addButton.setStyle("-fx-background-color: #0073e6; -fx-text-fill: white; -fx-font-size: 14px;");
@@ -107,23 +105,57 @@ public class ApplicationTracker extends Application {
             String company = companyField.getText();
             String position = positionField.getText();
             String status = statusField.getText();
-            String deadline = deadlineField.getText();
+            String deadline = deadlinePicker.getValue() != null ? deadlinePicker.getValue().toString() : "";
 
-            if (!company.isEmpty() && !position.isEmpty() && !status.isEmpty()) {
+            if (!company.isEmpty() && !position.isEmpty() && !status.isEmpty() && !deadline.isEmpty()) {
                 addApplicationToDatabase(company, position, status, deadline);
                 loadApplicationsFromDatabase(); // Reload applications
                 companyField.clear();
                 positionField.clear();
                 statusField.clear();
-                deadlineField.clear();
+                deadlinePicker.setValue(null);
             } else {
                 showAlert("Please fill in all required fields.");
             }
         });
 
-        HBox form = new HBox(15, companyField, positionField, statusField, deadlineField, addButton);
+        HBox form = new HBox(15, companyField, positionField, statusField, deadlinePicker, addButton);
         form.setPadding(new Insets(20));
         form.setAlignment(Pos.CENTER);
+
+        // Reminder Section
+        Label reminderLabel = new Label();
+        reminderLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        reminderLabel.setStyle("-fx-text-fill: green;");
+
+        TextField reminderField = new TextField();
+        reminderField.setPromptText("Reminder text");
+
+        DatePicker reminderDatePicker = new DatePicker();
+        reminderDatePicker.setPromptText("Pick a date");
+
+        Button setReminderButton = new Button("Set Reminder");
+        setReminderButton.setStyle("-fx-background-color: #0073e6; -fx-text-fill: white; -fx-font-size: 14px;");
+        setReminderButton.setOnAction(e -> {
+            String reminderText = reminderField.getText();
+            String reminderDate = reminderDatePicker.getValue() != null ? reminderDatePicker.getValue().toString() : "";
+
+            if (!reminderText.isEmpty() && !reminderDate.isEmpty()) {
+                reminderLabel.setText("Reminder for \"" + reminderText + "\" has been set for " + reminderDate + ".");
+                reminderField.clear();
+                reminderDatePicker.setValue(null);
+            } else {
+                showAlert("Please enter reminder text and pick a date.");
+            }
+        });
+
+        HBox reminderBox = new HBox(15, reminderField, reminderDatePicker, setReminderButton);
+        reminderBox.setAlignment(Pos.CENTER);
+        reminderBox.setPadding(new Insets(10));
+
+        VBox reminderSection = new VBox(10, new Label("Set a Reminder:"), reminderBox, reminderLabel);
+        reminderSection.setPadding(new Insets(20));
+        reminderSection.setAlignment(Pos.CENTER);
 
         // Back to Home Button
         Button homeButton = new Button("Back to Home");
@@ -134,7 +166,7 @@ public class ApplicationTracker extends Application {
         BorderPane layout = new BorderPane();
         layout.setTop(new VBox(20, heading, homeButton)); // Added heading and navigation
         layout.setCenter(tableView);
-        layout.setBottom(form);
+        layout.setBottom(new VBox(form, reminderSection));
 
         // Scene Setup
         Scene scene = new Scene(layout, screenBounds.getWidth(), screenBounds.getHeight());
