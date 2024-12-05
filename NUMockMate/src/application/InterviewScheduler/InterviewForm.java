@@ -11,6 +11,18 @@ import javafx.stage.Stage;
 
 public class InterviewForm {
 
+    // Form fields declared as instance variables to allow access for clearing
+    private static TextField interviewerField;
+    private static TextField intervieweeField;
+    private static ComboBox<String> typeComboBox;
+    private static DatePicker datePicker;
+    private static TextField timeField;
+    private static TextField topicField;
+    private static TextField roleField;
+    private static TextField durationField;
+    private static TextField meetingLinkField;
+    private static TextArea notesArea;
+
     public static VBox createForm(Stage primaryStage) {
         GridPane formPane = new GridPane();
         formPane.setPadding(new Insets(20));
@@ -20,43 +32,43 @@ public class InterviewForm {
 
         // Form Fields
         Label interviewerLabel = new Label("Interviewer Name:");
-        TextField interviewerField = new TextField();
+        interviewerField = new TextField();
         interviewerField.setPromptText("Enter interviewer name");
 
         Label intervieweeLabel = new Label("Interviewee Name:");
-        TextField intervieweeField = new TextField();
+        intervieweeField = new TextField();
         intervieweeField.setPromptText("Enter interviewee name");
 
         Label typeLabel = new Label("Interview Type:");
-        ComboBox<String> typeComboBox = new ComboBox<>();
+        typeComboBox = new ComboBox<>();
         typeComboBox.getItems().addAll("Behavioral", "Technical", "Role-Specific");
         typeComboBox.setPromptText("Select Interview Type");
 
         Label dateLabel = new Label("Date:");
-        DatePicker datePicker = new DatePicker();
+        datePicker = new DatePicker();
 
         Label timeLabel = new Label("Time:");
-        TextField timeField = new TextField();
+        timeField = new TextField();
         timeField.setPromptText("e.g., 10:00 AM");
 
         Label topicLabel = new Label("Topic:");
-        TextField topicField = new TextField();
+        topicField = new TextField();
         topicField.setPromptText("Enter topic of the interview");
 
         Label roleLabel = new Label("Role:");
-        TextField roleField = new TextField();
+        roleField = new TextField();
         roleField.setPromptText("e.g., Peer, Mentor, Professional");
 
         Label durationLabel = new Label("Duration:");
-        TextField durationField = new TextField();
+        durationField = new TextField();
         durationField.setPromptText("e.g., 30 minutes");
 
         Label meetingLinkLabel = new Label("Meeting Link:");
-        TextField meetingLinkField = new TextField();
+        meetingLinkField = new TextField();
         meetingLinkField.setPromptText("Enter meeting link");
 
         Label notesLabel = new Label("Notes:");
-        TextArea notesArea = new TextArea();
+        notesArea = new TextArea();
         notesArea.setPromptText("Add any notes or preparation details...");
         notesArea.setPrefHeight(100);
 
@@ -76,6 +88,7 @@ public class InterviewForm {
                 notesArea.getText()
             );
             ScheduledInterviews.refreshScheduledInterviews();
+            clearFormFields(); // Clear the form after submission
         });
 
         Button homeButton = new Button("Back to Home");
@@ -108,6 +121,19 @@ public class InterviewForm {
         formPane.add(buttonBox, 1, 10);
 
         return new VBox(formPane);
+    }
+
+    private static void clearFormFields() {
+        interviewerField.clear();
+        intervieweeField.clear();
+        typeComboBox.getSelectionModel().clearSelection();
+        datePicker.setValue(null);
+        timeField.clear();
+        topicField.clear();
+        roleField.clear();
+        durationField.clear();
+        meetingLinkField.clear();
+        notesArea.clear();
     }
 
     public static Text createHeading() {
