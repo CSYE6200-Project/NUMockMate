@@ -77,20 +77,24 @@ public class HomePage extends Application {
         }
 
         loginButton.setOnAction(e -> {
-            String username = usernameField.getText();
-            String password = passwordField.getText();
-            if (validateUser(username, password)) {
+            String username = usernameField.getText().trim();
+            String password = passwordField.getText().trim();
+            if (username.isEmpty() || password.isEmpty()) {
+                messageLabel.setText("Username and Password cannot be empty.");
+            } else if (validateUser(username, password)) {
                 isLoggedIn = true;
                 showHomePage(primaryStage);
             } else {
                 messageLabel.setText("Invalid Credentials. Please try again.");
             }
         });
-
+        
         signupButton.setOnAction(e -> {
-            String username = usernameField.getText();
-            String password = passwordField.getText();
-            if (addUser(username, password)) {
+            String username = usernameField.getText().trim();
+            String password = passwordField.getText().trim();
+            if (username.isEmpty() || password.isEmpty()) {
+                messageLabel.setText("Username and Password cannot be empty.");
+            } else if (addUser(username, password)) {
                 messageLabel.setText("Sign Up Successful! You can now log in.");
             } else {
                 messageLabel.setText("Sign Up Failed. Username already exists.");

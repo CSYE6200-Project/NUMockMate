@@ -18,7 +18,7 @@ import javafx.stage.Stage;
 import java.sql.*;
 import java.util.*;
 
-public class InterviewQuestions extends Application {
+public class InterviewQuestions extends Application implements QuestionManager {
 
     private static final String DB_URL = "jdbc:sqlite:numockmate.db";
     private ListView<Question> questionListView;
@@ -53,7 +53,7 @@ public class InterviewQuestions extends Application {
         Button deleteButton = new Button("Delete Selected");
         Button homeButton = new Button("Back to Home");
 
-        Button[] buttons = { addButton, deleteButton, homeButton };
+        Button[] buttons = {addButton, deleteButton, homeButton};
         for (Button button : buttons) {
             button.setStyle("-fx-background-color: #0073e6; -fx-text-fill: white; -fx-font-size: 14px;");
             button.setMinHeight(40);
@@ -103,59 +103,45 @@ public class InterviewQuestions extends Application {
         }
     }
 
-    private void addQuestionToDatabase() {
-        String newQuestionText = newQuestionField.getText().trim();
-        String questionType = questionTypeComboBox.getValue();
-        if (!newQuestionText.isEmpty() && uniqueQuestions.add(newQuestionText)) {
+    @Override
+    public void addQuestion(Question question) {
+        if (!uniqueQuestions.contains(question.getQuestionText())) {
             String insertSQL = "INSERT INTO questions (question_text, question_type) VALUES (?, ?)";
             try (Connection conn = DriverManager.getConnection(DB_URL);
                  PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
-                pstmt.setString(1, newQuestionText);
-                pstmt.setString(2, questionType);
+                pstmt.setString(1, question.getQuestionText());
+                pstmt.setString(2, question.getQuestionType());
                 pstmt.executeUpdate();
                 loadQuestionsFromDatabase();
-                newQuestionField.clear();
                 statusLabel.setText("Question added successfully!");
-                questionResponses.put(newQuestionText, new ArrayList<>());
             } catch (SQLException e) {
                 e.printStackTrace();
                 statusLabel.setText("Error adding question.");
             }
         } else {
-            statusLabel.setText("Please enter a unique question.");
+            statusLabel.setText("Question already exists.");
         }
     }
 
-    private void deleteSelectedQuestion() {
-        Question selectedQuestion = questionListView.getSelectionModel().getSelectedItem();
-        if (selectedQuestion != null) {
-            String deleteSQL = "DELETE FROM questions WHERE question_text = ? AND question_type = ?";
-            try (Connection conn = DriverManager.getConnection(DB_URL);
-                 PreparedStatement pstmt = conn.prepareStatement(deleteSQL)) {
-                pstmt.setString(1, selectedQuestion.getQuestionText());
-                pstmt.setString(2, selectedQuestion.getQuestionType());
-                int affectedRows = pstmt.executeUpdate();
-                if (affectedRows > 0) {
-                    loadQuestionsFromDatabase();
-                    statusLabel.setText("Question deleted successfully!");
-                    uniqueQuestions.remove(selectedQuestion.getQuestionText());
-                    questionResponses.remove(selectedQuestion.getQuestionText());
-                } else {
-                    statusLabel.setText("Error deleting question.");
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-                statusLabel.setText("Error deleting question.");
-            }
-        } else {
-            statusLabel.setText("Please select a question to delete.");
+    @Override
+    public void removeQuestion(Question question) {
+        String deleteSQL = "DELETE FROM questions WHERE question_text = ? AND question_type = ?";
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(deleteSQL)) {
+            pstmt.setString(1, question.getQuestionText());
+            pstmt.setString(2, question.getQuestionType());
+            pstmt.executeUpdate();
+            loadQuestionsFromDatabase();
+            statusLabel.setText("Question removed successfully!");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            statusLabel.setText("Error removing question.");
         }
     }
 
-    private void loadQuestionsFromDatabase() {
-        questionListView.getItems().clear();
-        uniqueQuestions.clear();
-        questionResponses.clear();
+    @Override
+    public List<Question> getAllQuestions() {
+        List<Question> questions = new ArrayList<>();
         String selectSQL = "SELECT question_text, question_type FROM questions";
         try (Connection conn = DriverManager.getConnection(DB_URL);
              Statement stmt = conn.createStatement();
@@ -174,12 +160,52 @@ public class InterviewQuestions extends Application {
                     default:
                         question = new GeneralQuestion(questionText);
                 }
-                questionListView.getItems().add(question);
-                uniqueQuestions.add(questionText);
-                questionResponses.put(questionText, new ArrayList<>());
+                questions.add(question);
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+        return questions;
+    }
+
+    private void loadQuestionsFromDatabase() {
+        questionListView.getItems().clear();
+        List<Question> questions = getAllQuestions();
+        questionListView.getItems().addAll(questions);
+        uniqueQuestions.clear();
+        for (Question question : questions) {
+            uniqueQuestions.add(question.getQuestionText());
+        }
+    }
+
+    private void addQuestionToDatabase() {
+        String newQuestionText = newQuestionField.getText().trim();
+        String questionType = questionTypeComboBox.getValue();
+        if (!newQuestionText.isEmpty()) {
+            Question question;
+            switch (questionType) {
+                case "Technical":
+                    question = new TechnicalQuestion(newQuestionText);
+                    break;
+                case "Behavioral":
+                    question = new BehavioralQuestion(newQuestionText);
+                    break;
+                default:
+                    question = new GeneralQuestion(newQuestionText);
+            }
+            addQuestion(question);
+            newQuestionField.clear();
+        } else {
+            statusLabel.setText("Please enter a question.");
+        }
+    }
+
+    private void deleteSelectedQuestion() {
+        Question selectedQuestion = questionListView.getSelectionModel().getSelectedItem();
+        if (selectedQuestion != null) {
+            removeQuestion(selectedQuestion);
+        } else {
+            statusLabel.setText("Please select a question to delete.");
         }
     }
 
@@ -187,6 +213,7 @@ public class InterviewQuestions extends Application {
         launch(args);
     }
 }
+
 
 interface QuestionManager {
     void addQuestion(Question question);
